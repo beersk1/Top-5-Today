@@ -203,7 +203,14 @@ router.get('/topics/:topicId/results', (req, res) => {
     topic: toTopic(topic),
     totalSubmissions: allSubmissions.length,
     leaderboard: leaderboard.slice(0, 5),
-    yourPicks: submission.picks,
+    yourPicks: submission.picks.map((pick) => ({
+      ...pick,
+      otherUserCount: new Set(
+        allSubmissions
+          .filter((other) => other.playerId !== player.id && other.picks.some((item) => item.entryId === pick.entryId))
+          .map((other) => other.playerId),
+      ).size,
+    })),
     hotTakeScore: hotTakeScore(submission.picks, allSubmissions),
     prediction: yours.prediction,
     predictionCorrect: yours.predictionCorrect,

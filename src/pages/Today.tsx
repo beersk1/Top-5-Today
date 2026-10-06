@@ -330,6 +330,8 @@ function ResultsPanel({ topicId }: { topicId: string }) {
     return <LoadError retry={() => refetch()} message="Your list is locked. Results are taking a beat." />;
 
   const maxPoints = Math.max(1, ...data.leaderboard.map((row) => row.points));
+  const crowdByEntry = new Map(data.leaderboard.map((entry) => [entry.entryId, entry]));
+  const sharedPicks = data.yourPicks.filter((pick) => crowdByEntry.has(pick.entryId)).length;
   const predictionNote =
     data.predictionCorrect === null ? (
       'Revealed when the day closes.'
@@ -343,11 +345,63 @@ function ResultsPanel({ topicId }: { topicId: string }) {
 
   return (
     <div className="page-enter space-y-5">
+      <section
+        aria-labelledby="your-locked-picks"
+        className="overflow-hidden rounded-[24px] border border-border bg-card"
+      >
+        <div className="p-5 pb-0 sm:p-6 sm:pb-0">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="mono flex items-center gap-2 text-[10px] uppercase tracking-[.15em] text-muted-foreground">
+                <LockKeyhole size={13} aria-hidden="true" /> Your list
+              </div>
+              <h2 id="your-locked-picks" className="display mt-2 text-2xl font-bold">
+                Your locked picks
+              </h2>
+            </div>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-bold text-muted-foreground">
+              <CheckCircle2 size={15} aria-hidden="true" /> Submitted
+            </span>
+          </div>
+          <ol className="mt-5 divide-y divide-border">
+            {[...data.yourPicks]
+              .sort((a, b) => a.rank - b.rank)
+              .map((pick) => {
+                return (
+                  <li key={pick.entryId} className="flex items-start gap-3 py-4">
+                    <span
+                      aria-hidden="true"
+                      className={`mono grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold ${pick.rank === 1 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+                    >
+                      {String(pick.rank).padStart(2, '0')}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-semibold leading-6 [overflow-wrap:anywhere]">{pick.label}</div>
+                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                        <span>
+                          {pick.otherUserCount.toLocaleString()} other {pick.otherUserCount === 1 ? 'user' : 'users'}{' '}
+                          picked this
+                        </span>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+          </ol>
+        </div>
+        <div className="flex items-center gap-2 border-t border-border bg-muted/40 px-5 py-3 text-xs text-muted-foreground sm:px-6">
+          <Users size={14} className="shrink-0" aria-hidden="true" />
+          <p>
+            <strong>{sharedPicks} of 5</strong> picks in the crowd's top five
+          </p>
+        </div>
+      </section>
+
       <div className="rounded-[24px] border border-border bg-card p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="mono flex items-center gap-2 text-[10px] uppercase tracking-[.15em] text-muted-foreground">
-              <CheckCircle2 size={13} className="text-secondary-foreground" /> List locked · results are in
+              <Users size={13} className="text-secondary-foreground" /> Crowd results
             </div>
             <h2 className="display mt-2 text-2xl font-bold tracking-[-.05em]">The crowd has spoken.</h2>
           </div>

@@ -59,7 +59,7 @@ export type TopicResults = {
   topic: Topic;
   totalSubmissions: number;
   leaderboard: LeaderboardEntry[];
-  yourPicks: RankedPick[];
+  yourPicks: Array<RankedPick & { otherUserCount: number }>;
   hotTakeScore: number;
   prediction: string | null;
   predictionCorrect: boolean | null;
