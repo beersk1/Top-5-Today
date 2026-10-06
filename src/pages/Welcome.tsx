@@ -123,7 +123,7 @@ export function WelcomePage() {
           {/* Example card, just for show */}
           <div className="page-enter relative mx-auto w-full max-w-[590px] [animation-delay:120ms]">
             <div className="absolute -right-10 top-0 h-56 w-56 rounded-full bg-[#e85b38]/20 blur-3xl" />
-            <div className="relative rotate-[1.3deg] rounded-[28px] border border-white/10 bg-[#f7f1e3] p-5 text-[#222936] shadow-[0_30px_100px_rgba(0,0,0,.28)] md:p-7">
+            <div className="relative rounded-[28px] border border-white/10 bg-[#f7f1e3] p-5 text-[#222936] shadow-[0_30px_100px_rgba(0,0,0,.28)] md:p-7">
               <div className="flex items-center justify-between border-b border-[#dfd8c9] pb-4">
                 <span className="mono text-[10px] font-medium uppercase tracking-[.18em] text-[#797968]">
                   TODAY'S QUESTION · 06/18
