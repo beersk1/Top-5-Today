@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useRoute } from 'wouter';
 import { Menu, UserRoundCog } from 'lucide-react';
+import { DEMO_MODE } from '../api';
 import { usePlayer } from '../player';
 import { Avatar, Brand, Button, ThemeToggle } from './ui';
 
@@ -84,6 +85,27 @@ function TopBar() {
   );
 }
 
+/** Demo mode only: explains where data lives and offers a fresh start. */
+function DemoNote() {
+  const reset = async () => {
+    if (!window.confirm('Delete all demo players, picks and leagues in this browser and start over?')) return;
+    if (import.meta.env.VITE_DEMO === 'true') {
+      const { resetDemo } = await import('../demo/server');
+      resetDemo();
+    }
+    window.location.hash = '';
+    window.location.reload();
+  };
+  return (
+    <p className="mt-2">
+      Demo version: everything is saved only in this browser, so other people won’t see your picks.{' '}
+      <button type="button" onClick={reset} className="font-bold text-primary underline-offset-2 hover:underline">
+        Reset demo
+      </button>
+    </p>
+  );
+}
+
 export function AppFrame({ children }: { children: ReactNode }) {
   return (
     <div className="paper-grain min-h-[100dvh] bg-background text-foreground">
@@ -93,6 +115,7 @@ export function AppFrame({ children }: { children: ReactNode }) {
       </main>
       <footer className="border-t border-border/70 px-5 py-6 text-center text-xs font-medium text-muted-foreground">
         A daily ritual for people with opinions. <span className="mono ml-1">ONE TOPIC. FIVE PICKS. NO TAKEBACKS.</span>
+        {DEMO_MODE && <DemoNote />}
       </footer>
     </div>
   );

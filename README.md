@@ -6,6 +6,8 @@ Every day there's a new prompt ("Top 5 movies you can watch over and over"). You
 
 This version runs entirely on your computer. There's no cloud database, no sign-in service and no API keys. Data lives in plain JSON files you can open in VS Code.
 
+**Try the demo:** https://beersk1.github.io/Top-5-Today/ (rebuilt automatically on every push to `main`; see [Online demo](#online-demo-github-pages)).
+
 ---
 
 ## Quick start
@@ -55,6 +57,29 @@ Stop the app with `Ctrl + C` in the terminal.
 | `npm run typecheck`  | Only checks for TypeScript errors.                                                                                                |
 | `npm run format`     | Formats every file with Prettier.                                                                                                 |
 | `npm run reset-data` | Deletes the `data/` folder. Fresh sample data is created the next time you start the app.                                         |
+| `npm run dev:demo`   | Runs the demo version locally: no server, data saved in your browser. Same as the GitHub Pages site.                              |
+| `npm run build:demo` | Builds the demo version into `dist/`. GitHub runs this for you on every push.                                                     |
+
+---
+
+## Online demo (GitHub Pages)
+
+Every push to `main` automatically publishes a demo at **https://beersk1.github.io/Top-5-Today/**. Watch it build in the repo's **Actions** tab; it takes about a minute.
+
+GitHub Pages can only host files, not run a server, so the demo runs the server code **inside the browser**:
+
+- The same `server/routes.ts` and `server/game.ts` run in the page. Instead of JSON files, data is saved in that browser's `localStorage`.
+- **Every visitor gets their own private copy** with the sample players. Your friends can try the app, but they won't see each other's picks. For real multiplayer, host the normal version on a server.
+- Links look like `/Top-5-Today/#/leagues`, because Pages can't serve `/leagues` on a refresh.
+- The footer has a **Reset demo** link that wipes that browser's demo data.
+
+How it's wired (only matters if you change it):
+
+- `src/demo/` holds browser versions of the three Node-only things the server uses: file storage (`store.ts`), Express (`express.ts`) and `node:crypto` (`crypto.ts`). `src/demo/server.ts` routes the website's requests to them.
+- `vite.config.ts` swaps those files in when building with `--mode demo`, and `.env.demo` turns on `VITE_DEMO`, which `src/api.ts` checks.
+- `.github/workflows/deploy-demo.yml` is the GitHub Actions workflow that builds and publishes it.
+
+If you add a server feature that uses another Node-only module (e.g. `node:fs` outside `store.ts`), the demo build will fail. Add a browser version in `src/demo/` and an alias in `vite.config.ts`.
 
 ---
 

@@ -1,6 +1,7 @@
+import path from 'node:path';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import { createLogger, defineConfig } from 'vite';
+import { createLogger, defineConfig, type Alias } from 'vite';
 
 const apiPort = process.env.API_PORT || 3001;
 
@@ -14,19 +15,32 @@ logger.error = (message, options) => {
   if (message.includes('http proxy error')) {
     if (!warnedServerDown) {
       warnedServerDown = true;
-      logger.warn(`Can't reach the local server on port ${apiPort} yet. Check the [server] lines above if this persists.`);
+      logger.warn(
+        `Can't reach the local server on port ${apiPort} yet. Check the [server] lines above if this persists.`,
+      );
     }
     return;
   }
   logError(message, options);
 };
 
-export default defineConfig({
+// Demo mode (`--mode demo`, used for GitHub Pages): the server code runs inside the browser.
+// These swap its Node-only imports for the browser versions in src/demo/.
+const demoAliases: Alias[] = [
+  { find: /^\.\/store$/, replacement: path.resolve(import.meta.dirname, 'src/demo/store.ts') },
+  { find: /^express$/, replacement: path.resolve(import.meta.dirname, 'src/demo/express.ts') },
+  { find: /^node:crypto$/, replacement: path.resolve(import.meta.dirname, 'src/demo/crypto.ts') },
+];
+
+export default defineConfig(({ mode }) => ({
   customLogger: logger,
+  // GitHub Pages serves the site from /<repo-name>/, which the workflow passes in as BASE_PATH.
+  base: process.env.BASE_PATH || '/',
   plugins: [react(), tailwindcss()],
+  resolve: { alias: mode === 'demo' ? demoAliases : [] },
   server: {
     port: 5173,
     // Send every /api request to the local server (server/index.ts).
     proxy: { '/api': `http://localhost:${apiPort}` },
   },
-});
+}));

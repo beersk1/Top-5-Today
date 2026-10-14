@@ -44,11 +44,23 @@ export class ApiError extends Error {
   }
 }
 
+/** True in the GitHub Pages demo (`npm run build:demo`), where the server runs inside the browser. */
+export const DEMO_MODE = import.meta.env.VITE_DEMO === 'true';
+
 async function request<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
   const headers: Record<string, string> = {};
   const playerId = getSavedPlayerId();
   if (playerId) headers['x-player-id'] = playerId;
   if (body !== undefined) headers['content-type'] = 'application/json';
+
+  // Written out in full (not DEMO_MODE) so the normal build drops the demo code entirely.
+  if (import.meta.env.VITE_DEMO === 'true') {
+    // Loaded only in the demo build, so the normal website never includes the server code.
+    const { demoRequest } = await import('./demo/server');
+    const { status, data } = demoRequest(method, path, headers, body);
+    if (status >= 400) throw new ApiError(status, (data as { error?: string })?.error ?? 'Request failed.');
+    return data as T;
+  }
 
   const response = await fetch(`/api${path}`, {
     method,

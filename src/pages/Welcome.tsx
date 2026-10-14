@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from 'react';
 import { ArrowRight, ChevronDown, Sparkles } from 'lucide-react';
-import { useCreatePlayer, useServerHealth } from '../api';
+import { DEMO_MODE, useCreatePlayer, useServerHealth } from '../api';
 import { Avatar, Brand, Button, ThemeToggle } from '../components/ui';
 import { usePlayer } from '../player';
 
@@ -190,7 +190,11 @@ export function WelcomePage() {
           <span>Top Five Today · A friendly place for strong opinions.</span>
           <span className="mono flex items-center gap-2 uppercase tracking-[.1em]">
             <span className={`h-1.5 w-1.5 rounded-full ${online ? 'bg-[#8bd3b8]' : 'bg-[#f5cc4e]'}`} />
-            {online ? 'Local server running' : 'Local server not reachable'}
+            {DEMO_MODE
+              ? 'Demo · saved in this browser'
+              : online
+                ? 'Local server running'
+                : 'Local server not reachable'}
           </span>
         </footer>
       </div>

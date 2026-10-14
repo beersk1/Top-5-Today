@@ -61,7 +61,7 @@ export type LeagueRow = {
   createdAt: string;
 };
 
-type Tables = {
+export type Tables = {
   players: PlayerRow[];
   topics: TopicRow[];
   entries: EntryRow[];
@@ -84,6 +84,11 @@ export function hasData(): boolean {
 
 export function markSetupDone(): void {
   writeFileSync(SETUP_DONE_FILE, `${new Date().toISOString()}\n`);
+}
+
+/** Deletes all saved data. */
+export function clearData(): void {
+  rmSync(DATA_DIR, { recursive: true, force: true });
 }
 
 export function readTable<T extends TableName>(table: T): Tables[T] {

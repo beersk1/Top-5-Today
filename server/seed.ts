@@ -3,8 +3,7 @@
 import { randomUUID } from 'node:crypto';
 import { addDays, getOrCreateTopicForDay, utcDay } from './game';
 import { ADD_SAMPLE_PLAYERS, SAMPLE_LEAGUE, SAMPLE_PLAYER_NAMES } from './sample-data';
-import { rmSync } from 'node:fs';
-import { DATA_DIR, hasData, markSetupDone, writeTable, type PlayerRow } from './store';
+import { clearData, hasData, markSetupDone, writeTable, type PlayerRow } from './store';
 
 /** How many past days get a topic (with sample answers) so the archive isn't empty. */
 const PAST_DAYS_TO_FILL = 6;
@@ -12,7 +11,7 @@ const PAST_DAYS_TO_FILL = 6;
 export function seedIfEmpty(): void {
   if (hasData()) return;
   // If a previous setup was interrupted, start it again from scratch.
-  rmSync(DATA_DIR, { recursive: true, force: true });
+  clearData();
 
   const now = new Date().toISOString();
   const samplePlayers: PlayerRow[] = ADD_SAMPLE_PLAYERS

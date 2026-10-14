@@ -1,8 +1,10 @@
 // Decides which page to show. No player chosen yet -> welcome page. Otherwise -> the app.
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Link, Route, Switch } from 'wouter';
+import { Link, Route, Router, Switch } from 'wouter';
+import { useHashLocation } from 'wouter/use-hash-location';
 import { ArrowRight } from 'lucide-react';
+import { DEMO_MODE } from './api';
 import { AppFrame } from './components/Layout';
 import { PlayerProvider, usePlayer } from './player';
 import { ArchivePage } from './pages/Archive';
@@ -53,11 +55,13 @@ function Pages() {
 }
 
 export default function App() {
-  return (
+  const pages = (
     <QueryClientProvider client={queryClient}>
       <PlayerProvider>
         <Pages />
       </PlayerProvider>
     </QueryClientProvider>
   );
+  // GitHub Pages can't serve /leagues etc. on refresh, so the demo uses #/leagues style links.
+  return DEMO_MODE ? <Router hook={useHashLocation}>{pages}</Router> : pages;
 }
