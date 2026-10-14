@@ -7,7 +7,10 @@ import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync 
 import path from 'node:path';
 import type { RankedPick } from '../shared/types';
 
-export const DATA_DIR = path.resolve(import.meta.dirname, '..', 'data');
+/** Where the JSON files live. Set the DATA_DIR environment variable to use a different folder. */
+export const DATA_DIR = process.env.DATA_DIR
+  ? path.resolve(process.env.DATA_DIR)
+  : path.resolve(import.meta.dirname, '..', 'data');
 
 export type PlayerRow = {
   id: string;

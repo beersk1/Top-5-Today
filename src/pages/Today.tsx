@@ -1,7 +1,7 @@
 // The home page: today's question. Before you submit you see the list builder,
 // after you submit you see the crowd's results.
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   ArrowDown,
   ArrowRight,
@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Clock3,
   Flame,
+  Gem,
   Lightbulb,
   LockKeyhole,
   Sparkles,
@@ -308,6 +309,93 @@ function PickBuilder({ topicId }: { topicId: string }) {
   );
 }
 
+/** "1.2%" for small numbers so rare picks don't all read as "0%" or "1%". */
+function formatPercent(percent: number) {
+  return percent > 0 && percent < 5 ? `${percent.toFixed(1)}%` : `${Math.round(percent)}%`;
+}
+
+/**
+ * How common a pick was among the other players.
+ * 60%+ = crowd favorite, 15–59% = solid pick, under 15% = rare.
+ */
+function pickRarity(otherUserCount: number, otherPlayers: number) {
+  const percent = otherPlayers ? (otherUserCount / otherPlayers) * 100 : 0;
+  if (otherPlayers > 0 && percent >= 60) {
+    return {
+      percent,
+      kind: 'favorite',
+      label: 'Crowd favorite',
+      badgeClass: 'bg-secondary text-secondary-foreground',
+      barClass: 'bg-secondary-foreground/60',
+    };
+  }
+  if (otherPlayers > 0 && percent >= 15) {
+    return {
+      percent,
+      kind: 'solid',
+      label: 'Solid pick',
+      badgeClass: 'bg-muted text-muted-foreground',
+      barClass: 'bg-muted-foreground/50',
+    };
+  }
+  return {
+    percent,
+    kind: 'rare',
+    label: otherUserCount === 0 && otherPlayers > 0 ? 'Only you' : 'Rare',
+    badgeClass: 'bg-accent text-accent-foreground',
+    barClass: 'bg-primary',
+  };
+}
+
+/** The headline stat above your picks: your rarest pick, or a "crowd pleaser" note if none were rare. */
+function RarityCallout({
+  pick,
+  otherPlayers,
+}: {
+  pick: { label: string; otherUserCount: number; rarity: ReturnType<typeof pickRarity> };
+  otherPlayers: number;
+}) {
+  let title: string;
+  let body: ReactNode;
+  if (otherPlayers === 0) {
+    title = 'First on the board.';
+    body = 'Nobody else has played yet. Check back as more lists come in.';
+  } else if (pick.otherUserCount === 0) {
+    title = 'Rare find.';
+    body = (
+      <>
+        Nobody else picked <strong>{pick.label}</strong>. That one’s all yours.
+      </>
+    );
+  } else if (pick.rarity.kind === 'rare') {
+    title = 'Rare find.';
+    body = (
+      <>
+        Only <strong>{formatPercent(pick.rarity.percent)}</strong> of the {otherPlayers.toLocaleString()} other players
+        picked <strong>{pick.label}</strong>.
+      </>
+    );
+  } else {
+    title = 'Crowd pleaser.';
+    body = (
+      <>
+        Even your least common pick, <strong>{pick.label}</strong>, was on {formatPercent(pick.rarity.percent)} of other
+        lists.
+      </>
+    );
+  }
+  return (
+    <div className="mt-5 flex items-start gap-3 rounded-2xl bg-accent/35 p-4 text-sm leading-6">
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-accent text-accent-foreground">
+        <Gem size={18} aria-hidden="true" />
+      </span>
+      <p>
+        <span className="font-extrabold">{title}</span> {body}
+      </p>
+    </div>
+  );
+}
+
 function ResultsPanel({ topicId }: { topicId: string }) {
   const { data, isLoading, isError, refetch } = useResults(topicId);
   if (isLoading) {
@@ -332,6 +420,11 @@ function ResultsPanel({ topicId }: { topicId: string }) {
   const maxPoints = Math.max(1, ...data.leaderboard.map((row) => row.points));
   const crowdByEntry = new Map(data.leaderboard.map((entry) => [entry.entryId, entry]));
   const sharedPicks = data.yourPicks.filter((pick) => crowdByEntry.has(pick.entryId)).length;
+  const otherPlayers = Math.max(0, data.totalSubmissions - 1);
+  const yourPicks = [...data.yourPicks]
+    .sort((a, b) => a.rank - b.rank)
+    .map((pick) => ({ ...pick, rarity: pickRarity(pick.otherUserCount, otherPlayers) }));
+  const rarest = [...yourPicks].sort((a, b) => a.otherUserCount - b.otherUserCount)[0];
   const predictionNote =
     data.predictionCorrect === null ? (
       'Revealed when the day closes.'
@@ -363,30 +456,39 @@ function ResultsPanel({ topicId }: { topicId: string }) {
               <CheckCircle2 size={15} aria-hidden="true" /> Submitted
             </span>
           </div>
-          <ol className="mt-5 divide-y divide-border">
-            {[...data.yourPicks]
-              .sort((a, b) => a.rank - b.rank)
-              .map((pick) => {
-                return (
-                  <li key={pick.entryId} className="flex items-start gap-3 py-4">
-                    <span
-                      aria-hidden="true"
-                      className={`mono grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold ${pick.rank === 1 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
-                    >
-                      {String(pick.rank).padStart(2, '0')}
+          {rarest && <RarityCallout pick={rarest} otherPlayers={otherPlayers} />}
+          <ol className="mt-3 divide-y divide-border">
+            {yourPicks.map((pick) => (
+              <li key={pick.entryId} className="flex items-center gap-3 py-4">
+                <span
+                  aria-hidden="true"
+                  className={`mono grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold ${pick.rank === 1 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+                >
+                  {String(pick.rank).padStart(2, '0')}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span className="text-sm font-semibold leading-6 [overflow-wrap:anywhere]">{pick.label}</span>
+                    <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${pick.rarity.badgeClass}`}>
+                      {pick.rarity.label}
                     </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-semibold leading-6 [overflow-wrap:anywhere]">{pick.label}</div>
-                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                        <span>
-                          {pick.otherUserCount.toLocaleString()} other {pick.otherUserCount === 1 ? 'user' : 'users'}{' '}
-                          picked this
-                        </span>
-                      </div>
+                  </div>
+                  <div className="mt-2 flex items-center gap-3">
+                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                      <div
+                        className={`h-full rounded-full transition-[width] duration-700 ${pick.rarity.barClass}`}
+                        style={{ width: `${Math.max(2, pick.rarity.percent)}%` }}
+                      />
                     </div>
-                  </li>
-                );
-              })}
+                    <span className="mono w-[150px] shrink-0 text-right text-[11px] text-muted-foreground">
+                      {otherPlayers === 0
+                        ? 'first to play'
+                        : `${formatPercent(pick.rarity.percent)} of others · ${pick.otherUserCount}/${otherPlayers}`}
+                    </span>
+                  </div>
+                </div>
+              </li>
+            ))}
           </ol>
         </div>
         <div className="flex items-center gap-2 border-t border-border bg-muted/40 px-5 py-3 text-xs text-muted-foreground sm:px-6">
